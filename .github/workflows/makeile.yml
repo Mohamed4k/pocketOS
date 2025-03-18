@@ -1,0 +1,25 @@
+name: Android Kernel
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: configure
+      run: 
+          sudo apt update
+          sudo apt install -y build-essential gcc make bochs bochs-sdl grub2
+
+    - name: Install dependencies
+      run: make
+
+    - name: Run check
+      run: make check
+
+    - name: Run distcheck
+      run: make distcheck
