@@ -37,7 +37,7 @@ jobs:
       - name: Compile drivers and memory management
         run: |
           gcc -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
-              -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c drivers/io/io.c -o drivers/io/io.o
+              -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c drivers/io/io.s -o drivers/io/io.o
           gcc -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
               -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c memory/segmentation/memory_segments.c -o memory/segmentation/memory_segments.o
           gcc -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
