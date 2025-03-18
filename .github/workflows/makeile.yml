@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential gcc nasm ld bochs bochs-sdl grub2 genisoimage
+          sudo apt install -y build-essential gcc nasm binutils bochs bochs-sdl grub2 genisoimage
 
       - name: Compile assembly files
         run: |
