@@ -10,10 +10,9 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: configure
-      run: 
-          sudo apt update
-          sudo apt install -y build-essential gcc make bochs bochs-sdl grub2
+   # - name: configure
+    #  run: 
+     #   sudo apt install -y build-essential gcc make bochs bochs-sdl grub2
 
     - name: Install dependencies
       run: make
