@@ -8,17 +8,70 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-   # - name: configure
-    #  run: 
-     #   sudo apt install -y build-essential gcc make bochs bochs-sdl grub2
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential gcc nasm ld bochs bochs-sdl grub2 genisoimage
 
-    - name: Install dependencies
-      run: make
+      - name: Compile assembly files
+        run: |
+          nasm -f elf loader.s -o loader.o
+          nasm -f elf start_user_program.s -o start_user_program.o
+          nasm -f elf user_mode.s -o user_mode.o
 
-    - name: Run check
-      run: make check
+      - name: Compile C files
+        run: |
+          gcc -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
+              -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c kmain.c -o kmain.o
+          gcc -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
+              -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c user_program.c -o user_program.o
 
-    - name: Run distcheck
-      run: make distcheck
+      - name: Compile drivers and memory management
+        run: |
+          gcc -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
+              -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c drivers/io/io.c -o drivers/io/io.o
+          gcc -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
+              -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c memory/segmentation/memory_segments.c -o memory/segmentation/memory_segments.o
+          gcc -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
+              -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c memory/segmentation/gdt.c -o memory/segmentation/gdt.o
+          gcc -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
+              -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c memory/heap/kheap.c -o memory/heap/kheap.o
+          gcc -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
+              -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c memory/paging/paging.c -o memory/paging/paging.o
+
+      - name: Link kernel
+        run: |
+          ld -T link.ld -melf_i386 loader.o kmain.o drivers/io/io.o \
+              memory/segmentation/memory_segments.o memory/segmentation/gdt.o \
+              memory/heap/kheap.o memory/paging/paging.o user_mode.o \
+              -o kernel.elf
+
+      - name: Link user program
+        run: |
+          ld -T link_user_program.ld -melf_i386 user_program.o start_user_program.o -o user_program.bin
+
+      - name: Create OS ISO
+        run: |
+          mkdir -p iso/boot/grub
+          cp kernel.elf iso/boot/kernel.elf
+          cp user_program.bin iso/modules
+          cp menu.lst iso/boot/grub/menu.lst
+          genisoimage -R \
+                      -b boot/grub/stage2_eltorito \
+                      -no-emul-boot \
+                      -boot-load-size 4 \
+                      -A os \
+                      -input-charset utf8 \
+                      -quiet \
+                      -boot-info-table \
+                      -o os.iso \
+                      iso
+
+      - name: Upload ISO
+        uses: actions/upload-artifact@v3
+        with:
+          name: os-iso
+          path: os.iso
